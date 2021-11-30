@@ -1,5 +1,6 @@
 ﻿using Caliburn.Micro;
 using Dtc.Http;
+using Dtc.Http.Http;
 using RadioOwl.Helpers;
 using RadioOwl.Parsers;
 using RadioOwl.Parsers.Data;
@@ -166,23 +167,28 @@ namespace RadioOwl.Forms
             radioData.State = FileRowState.Started;
 
             radioData.PartSet
-                        .ToList()
-                            .ForEach(p => new FileHelper().GenerateFilename(p));
-
-            radioData.PartSet
                             .Where(p => p.UrlExists)
                                 .ToList()
                                     .ForEach(async p => await ProcessDataPartAsync(p));
         }
 
-
+        /// <summary>
+        /// Zpracování jedné části pořadu - zde už musím mít rozparsovanou url
+        /// </summary>
         private async Task ProcessDataPartAsync(RadioDataPart radioDataPart)
         {
+            new FileHelper().GenerateFilename(radioDataPart);
+
+            // soubor je3=šte neexistuje?
             if (File.Exists(radioDataPart.FileName))
             {
-                radioDataPart.AddLog($"Soubor již existuje: {radioDataPart.FileName}.");
+                radioDataPart.State = FileRowState.FileAlreadyExists;
+                radioDataPart.AddLogWarning($"Soubor již existuje: {radioDataPart.FileName}.");
             }
-            await DownloadPartAsync(radioDataPart);
+            else
+            {
+                await DownloadPartAsync(radioDataPart);
+            }
         }
 
 
