@@ -36,8 +36,8 @@ namespace RadioOwl
             DisplayRootViewFor<MainViewModel>(settings);
 
             // test formulare
-            DisplayRootViewFor<Forms.Test.Window1ViewModel>(settings);
-            DisplayRootViewFor<Forms.Test.Window2ViewModel>(settings);
+            //DisplayRootViewFor<Forms.Test.Window1ViewModel>(settings);
+            //DisplayRootViewFor<Forms.Test.Window2ViewModel>(settings);
         }
     }
 }
