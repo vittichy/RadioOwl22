@@ -5,12 +5,14 @@ using RadioOwl.Helpers;
 using RadioOwl.Parsers;
 using RadioOwl.Parsers.Data;
 using RadioOwl.Parsers.Data.Factory;
+using RadioOwl.Parsers.Parser.Interfaces;
 using RadioOwl.Windows;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -18,7 +20,7 @@ using System.Windows;
 namespace RadioOwl.Forms
 {
     /// <summary>
-    /// Hlavni okno aplikace
+    /// ViewModel hlavniho okna aplikace
     /// </summary>
     public class MainViewModel : PropertyChangedBase
     {
@@ -27,8 +29,19 @@ namespace RadioOwl.Forms
         /// </summary>
         private readonly ParserCollection _parsers = new ParserCollection();
 
-
-
+        private string _viewTitle;
+        /// <summary>
+        /// Titulek okna
+        /// </summary>
+        public string ViewTitle
+        {
+            get { return _viewTitle; }
+            set
+            {
+                _viewTitle = value;
+                NotifyOfPropertyChange();
+            }
+        } 
 
         /// <summary>
         /// Hlavní set s pořady (master)
@@ -51,25 +64,16 @@ namespace RadioOwl.Forms
         }
 
 
+        /// <summary>
+        /// Konstruktor
+        /// </summary>
+        public MainViewModel()
+        {
+            ViewTitle = $"RadioOwl {Assembly.GetExecutingAssembly().GetName()?.Version?.Major}";
+        }
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-        //public MainViewModel()
-        //{
-
-
-        //}
 
 
         /// <summary>
@@ -138,16 +142,15 @@ namespace RadioOwl.Forms
                 return;
 
             // dohledání vhodného parseru stránky
-            var parser = _parsers.FindParser(radioData.Url);
-            if (parser == null)
+            var parserSet = _parsers.FindParser(radioData.Url);
+            if (!parserSet.Any())
             {
                 radioData.AddLogError($"Nepodařilo se dohledat parser pro url: {radioData.Url}.");
                 return;
             }
 
             // zkusím použít parser a rozpasovat
-            radioData.State = FileRowState.Parse;
-            var parseOk = await parser.ParseAsync(radioData);
+            var parseOk = await TryParser(radioData, parserSet);
             if (parseOk)
             {
                 radioData.AddLog("Parser ok.");
@@ -159,15 +162,27 @@ namespace RadioOwl.Forms
             }
         }
 
+        private async Task<bool> TryParser(RadioData radioData, List<IPageParser> parserSet)
+        {
+            foreach (var parser in parserSet)
+            {
+                var parseOk = await parser.ParseAsync(radioData);
+                // beru prvni parser kteremu se povedlo parsovani
+                if (parseOk)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         /// <summary>
         /// Zpracovani rozparsovanych dat - tj zde bych jiz mel znat odkazy na finalni mp3 a ty stahnu, ulozim, porezim filename, mp3id tagy atd
         /// </summary>
         private void DownloadRadioData(RadioData radioData)
         {
-            radioData.State = FileRowState.Started;
-
             radioData.PartSet
-                            .Where(p => p.UrlExists)
+                            .Where(p => p.UrlMp3Exists)
                                 .ToList()
                                     .ForEach(async p => await ProcessDataPartAsync(p));
         }
@@ -177,51 +192,65 @@ namespace RadioOwl.Forms
         /// </summary>
         private async Task ProcessDataPartAsync(RadioDataPart radioDataPart)
         {
-            new FileHelper().GenerateFilename(radioDataPart);
+            radioDataPart.State = RadioDataPartState.Started;
+            radioDataPart.FileName = new FileHelper().GenerateFileName(radioDataPart);
 
-            // soubor je3=šte neexistuje?
-            if (File.Exists(radioDataPart.FileName))
+            // soubor jeste neexistuje?
+            if (!File.Exists(radioDataPart.FileName))
             {
-                radioDataPart.State = FileRowState.FileAlreadyExists;
-                radioDataPart.AddLogWarning($"Soubor již existuje: {radioDataPart.FileName}.");
+                radioDataPart.State = RadioDataPartState.Started;
+                await DownloadPartAsync(radioDataPart);
             }
             else
             {
-                await DownloadPartAsync(radioDataPart);
+                radioDataPart.State = RadioDataPartState.FileAlreadyExists;
+                radioDataPart.AddLogWarning($"Soubor již existuje: {radioDataPart.FileName}.");
             }
         }
-
-
 
         private async Task DownloadPartAsync(RadioDataPart radioDataPart)
         {
-            radioDataPart.AddLog($"Zahájení stahování: '{radioDataPart.Url}'");
+            radioDataPart.AddLog($"Zahájení stahování: '{radioDataPart.UrlMp3}'");
 
             var asyncDownloader = new AsyncDownloader();
-            var output = await asyncDownloader.GetData(radioDataPart.Url,
+            var output = await asyncDownloader.GetData(radioDataPart.UrlMp3,
                                                        p =>
                                                        {
-
-                                                           radioDataPart.Progress = p.ProgressPercentage;
+                                                           radioDataPart.ProgressPercentage = p.ProgressPercentage;
                                                            radioDataPart.BytesReceived = p.BytesReceived;
                                                            radioDataPart.TotalBytesToReceive = p.TotalBytesToReceive;
-
-
-                                                               ///??????       TotalProgress.UpdateProgress(RadioDataSet);
-                                                           });
+                                                       });
             if (output.DownloadOk)
             {
-                Save(radioDataPart, output.Output);
+                SaveDataPart(radioDataPart, output.Output);
+                SaveReadMe(radioDataPart);
+                radioDataPart.State = RadioDataPartState.Finnished;
             }
             else
             {
-                radioDataPart.AddLog(string.Format("Chyba při stahování streamu: {0}.", output.Exception?.Message)); /////////, FileRowState.Error);
+                radioDataPart.AddLogError(string.Format("Chyba při stahování streamu: {0}.", output.Exception?.Message));
+                radioDataPart.State = RadioDataPartState.Error;
             }
         }
 
+        private void SaveReadMe(RadioDataPart radioDataPart)
+        {
+            var readmeFilename = new FileHelper().GenerateReadmeFilename(radioDataPart);
 
+            var readme = new StringBuilder();
+            readme.AppendLine($"{DateTime.Now:g}");
+            readme.AppendLine(radioDataPart.Title);
+            readme.AppendLine($"Parts:{radioDataPart.RadioData?.ContentSerialAllParts} Found:{radioDataPart.RadioData?.PartSet?.Count()}");
+            readme.AppendLine(radioDataPart.Description);
+            File.WriteAllText(readmeFilename, readme.ToString());
+        }
 
-        private void Save(RadioDataPart radioDataPart, byte[] data)
+        /// <summary>
+        /// Uložení <see cref="RadioDataPart"/>
+        /// </summary>
+        /// <param name="radioDataPart">RadioDaraPart</param>
+        /// <param name="data">Mp3 data k ulozeni</param>
+        private void SaveDataPart(RadioDataPart radioDataPart, byte[] data)
         {
             var path = Path.GetDirectoryName(radioDataPart.FileName);
             Directory.CreateDirectory(path);
@@ -258,12 +287,14 @@ namespace RadioOwl.Forms
         public void OpenUrl()
         {
             // TODO zatim jen test stazeni - nahrada dropu
-            var url = @"https://www.mujrozhlas.cz/cetba-na-pokracovani/alena-mornstajnova-listopad-ctou-jana-strykova-igor-bares-simona-postlerova";
+            // NEJDE ??? var url = @"https://www.mujrozhlas.cz/cetba-na-pokracovani/woody-allen-mimochodem-szirave-sebeironicka-vtipna-autobiografie";
+
+            //var url = @"https://www.mujrozhlas.cz/cetba-na-pokracovani/marcel-pagnol-jak-voni-tymian";
+            //ProcessUrl(url);
+
+            var url = InputBoxViewModel.ExecuteModal("Načíst z URL", "URL:");
             ProcessUrl(url);
 
-
-            //var url = InputBoxViewModel.ExecuteModal("Načíst z URL", "URL:");
-            //ProcessUrl(url);
         }
 
 

@@ -1,62 +1,28 @@
 ﻿using Dtc.Common.Extensions;
 using RadioOwl.Parsers.Data.Factory;
+using RadioOwl.Parsers.Data.Helper;
 using RadioOwl.Parsers.Data.PropertyChanged;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Tracing;
 using System.Linq;
+using System.Windows.Media;
 
 namespace RadioOwl.Parsers.Data
 {
     /// <summary>
-    /// Jedna část 
+    /// Jedna část pořadu 
     /// </summary>
     public class RadioDataPart : PropertyChangedBase
     {
         /// <summary>
-        /// 
+        /// Hlavička pořadu
         /// </summary>
         public readonly RadioData RadioData;
 
-
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public List<RadioLog> LogSet { get; set; } = new List<RadioLog>();
-
-        private int _logSetSelectedIndex;
-        public int LogSetSelectedIndex
-        {
-            get { return _logSetSelectedIndex; }
-            set
-            {
-                _logSetSelectedIndex = value;
-                OnPropertyChanged();
-            }
-        }
-
-        private string _url;
-        /// <summary>
-        /// Url části pořadu
-        /// </summary>
-        public string Url
-        {
-            get { return _url; }
-            set
-            {
-                _url = value;
-                OnPropertyChanged();
-            }
-        }
-
-        public bool UrlExists { get { return !string.IsNullOrEmpty(Url); } }
-
-
         private int? _partNo;
         /// <summary>
-        ///
+        /// Číslo pořadu
         /// </summary>
         public int? PartNo
         {
@@ -68,10 +34,9 @@ namespace RadioOwl.Parsers.Data
             }
         }
 
-
         private string _title;
         /// <summary>
-        ///
+        /// Titulek pořadu
         /// </summary>
         public string Title
         {
@@ -83,10 +48,9 @@ namespace RadioOwl.Parsers.Data
             }
         }
 
-
         private string _description;
         /// <summary>
-        ///
+        /// Popis pořadu
         /// </summary>
         public string Description
         {
@@ -94,56 +58,102 @@ namespace RadioOwl.Parsers.Data
             set
             {
                 _description = value;
-                OnPropertyChanged(() => Description, () => DescriptionSingleLine);
+                OnPropertyChanged();
+                DescriptionSingleLine = Description?.RemoveWhitespace();
             }
         }
 
-
-      //  private string _description;
+        private string _descriptionSingleLine;
         /// <summary>
-        ///
+        /// Popis pořadu jako jedna řádka (pro datagrid)
         /// </summary>
         public string DescriptionSingleLine
         {
-            get { return Description?.RemoveWhitespace(); }
-            //set
-            //{
-            //    _description = value;
-            //    OnPropertyChanged();
-            //}
-        }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        private int _progress;
-        /// <summary>
-        /// Progres stahování
-        /// </summary>
-        public int Progress
-        {
-            get { return _progress; }
-            set
+            get { return _descriptionSingleLine; }
+            private set
             {
-                _progress = value;
+                _descriptionSingleLine = value;
                 OnPropertyChanged();
             }
         }
 
+        private string _urlMp3;
+        /// <summary>
+        /// Url 
+        /// </summary>
+        public string UrlMp3
+        {
+            get { return _urlMp3; }
+            set
+            {
+                _urlMp3 = value;
+                OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
+        /// Existuje <see cref="UrlMp3"/>
+        /// </summary>
+        public bool UrlMp3Exists { get { return !string.IsNullOrEmpty(UrlMp3); } }
+
+        private string _fileName;
+        /// <summary>
+        /// Filename pořadu pro uložení na disk
+        /// </summary>
+        public string FileName
+        {
+            get { return _fileName; }
+            set
+            {
+                _fileName = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private bool _saved;
+        /// <summary>
+        /// Uloženo?
+        /// </summary>
+        public bool Saved
+        {
+            get { return _saved; }
+            set
+            {
+                _saved = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private int _progressPercentage;
+        /// <summary>
+        /// Progres stahování v %
+        /// </summary>
+        public int ProgressPercentage
+        {
+            get { return _progressPercentage; }
+            set
+            {
+                _progressPercentage = value;
+                OnPropertyChanged();
+                ProgressPercentageAsText = RadioDataHelper.ProgressText(ProgressPercentage, BytesReceived);
+                // reportovat změnu do master záznamu RadioData
+                RadioData.PartChanged();
+            }
+        }
+
+        private string _progressPercentageAsText;
+        /// <summary>
+        /// Progres stahování v % jako text pro datagrid
+        /// </summary>
+        public string ProgressPercentageAsText
+        {
+            get { return _progressPercentageAsText; }
+            private set
+            {
+                _progressPercentageAsText = value;
+                OnPropertyChanged();
+            }
+        }
 
         private long _bytesReceived;
         /// <summary>
@@ -156,13 +166,14 @@ namespace RadioOwl.Parsers.Data
             {
                 _bytesReceived = value;
                 OnPropertyChanged();
-                RadioData.UpdateTotalProgress();
+                // reportovat změnu do master záznamu RadioData
+                RadioData.PartChanged();
             }
         }
 
         private long _totalBytesToReceive;
         /// <summary>
-        /// Velikost souboru ke stažení
+        /// Celková velikost souboru ke stažení
         /// </summary>
         public long TotalBytesToReceive
         {
@@ -171,83 +182,67 @@ namespace RadioOwl.Parsers.Data
             {
                 _totalBytesToReceive = value;
                 OnPropertyChanged();
-                RadioData.UpdateTotalProgress();
+                RadioData.PartChanged(); // reportovat změnu do master záznamu RadioData
             }
         }
 
-        
-
-
-        public string ProgressPercent
+        private RadioDataPartState _state;
+        /// <summary>
+        /// Stav záznamu viz <see cref="RadioDataPartState"/>
+        /// </summary>
+        public RadioDataPartState State
         {
-            get { return string.Format("{0}%  {1}", Progress, BytesReceived.ToFileSize()); }
-        }
-
-
-
-
-
-
-
-
-
-
-
-        private string _fileName;
-        public string FileName
-        {
-            get { return _fileName; }
+            get => _state;
             set
             {
-                _fileName = value;
+                _state = value;
+                OnPropertyChanged();
+                StateColor = new RadioDataPartStateHelper().ToBrush(State);
+                RadioData.PartChanged(); // reportovat změnu do master záznamu RadioData
+            }
+        }
+
+        private Brush _stateColor;
+        /// <summary>
+        /// Barva dle stavu řádku <see cref="State"/>
+        /// </summary>
+        public Brush StateColor
+        {
+            get { return _stateColor; }
+            private set
+            {
+                _stateColor = value;
                 OnPropertyChanged();
             }
         }
-
-
-
-        private bool _saved;
-        public bool Saved
-        {
-            get { return _saved; }
-            set
-            {
-                _saved = value;
-                OnPropertyChanged();
-            }
-        }
-
-
-
-
-
-
-
-
 
 
         /// <summary>
         /// Kostruktor
         /// </summary>
-        /// <param name="radioData"></param>
         public RadioDataPart(RadioData radioData)
         {
             RadioData = radioData ?? throw new ArgumentNullException(nameof(radioData));
         }
 
-
-
+        /// <summary>
+        /// Přidání logu
+        /// </summary>
         public void AddLog(string msg, EventLevel eventLevel = EventLevel.Informational)
         {
             var radioLog = new RadioLogFactory().Create(msg, PartNo, eventLevel);
-            LogSet.Add(radioLog);
-            RadioData.LogSet.Add(radioLog); // pridavam i na master!
-            LogSetSelectedIndex = LogSet.Count() - 1;
+            //LogSet.Add(radioLog);
+            //LogSetSelectedIndex = LogSet.Count() - 1;
+            RadioData.LogSet.Add(radioLog); 
         }
 
         public void AddLogError(string msg)
         {
             AddLog(msg, EventLevel.Error);
+        }
+        public void AddLogWarning(string msg)
+        {
+            AddLog(msg, EventLevel.Warning);
         }
     }
 }

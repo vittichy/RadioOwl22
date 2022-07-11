@@ -1,7 +1,8 @@
 ﻿using Dtc.Common.Extensions;
 using RadioOwl.Parsers.Data.Factory;
+using RadioOwl.Parsers.Data.Helper;
 using RadioOwl.Parsers.Data.PropertyChanged;
-using System.Collections.Generic;
+using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics.Tracing;
 using System.Linq;
@@ -10,9 +11,9 @@ using System.Windows.Media;
 namespace RadioOwl.Parsers.Data
 {
     /// <summary>
-    /// Řádek pro data o pořadu - má pod sebou jeden nebo více částí viz PartSet
+    /// Hlavní data o pořadu - má pod sebou jeden nebo více částí viz <see cref="RadioDataPart"/>
     /// </summary>
-    public class RadioData :  PropertyChangedBase
+    public class RadioData : PropertyChangedBase
     {
         /// <summary>
         /// Části - jendotlivé díly pořadu a pod
@@ -22,7 +23,7 @@ namespace RadioOwl.Parsers.Data
         /// <summary>
         /// Seznam log hlášení - z jednotlivých částí přidávám hlášení i sem, takže by to měl být komplet seznam
         /// </summary>
-        public List<RadioLog> LogSet { get; set; } = new List<RadioLog>();
+        public ObservableCollection<RadioLog> LogSet { get; set; } = new ObservableCollection<RadioLog>();
 
         private int _logSetSelectedIndex;
         /// <summary>
@@ -75,9 +76,21 @@ namespace RadioOwl.Parsers.Data
         /// <summary>
         /// Celkový total progres ze všech částí v %
         /// </summary>
-        public string Progress { get { return BytesReceived.ToPercentFromTotal(TotalBytesToReceive); } }
+        public long ProgressPercentage 
+        { 
+            get 
+            { 
+                if(TotalBytesToReceive == 0)
+                {
+                    return 0;
+                }
+                return BytesReceived == 0 ? 0 : (long)Math.Round(((decimal)BytesReceived / (decimal)TotalBytesToReceive) * 100, 0); 
+            } }
 
-        public string ProgressAsText { get { return string.Format("{0}%  {1}", Progress, BytesReceived.ToFileSize()); } }
+        /// <summary>
+        /// Celkový total progres ze všech částí v % jako text
+        /// </summary>
+        public string ProgressPercentageAsText { get { return RadioDataHelper.ProgressText(ProgressPercentage, BytesReceived); } }
 
 
 
@@ -215,24 +228,87 @@ namespace RadioOwl.Parsers.Data
 
       
 
-        /// <summary>
-        /// TODO nepujde volat rovnou z jednotliv7ych casti?
-        /// </summary>
-        public void UpdateTotalProgress()
-        {
-            OnPropertyChanged(() => TotalBytesToReceive);
-            OnPropertyChanged(() => BytesReceived);
-            OnPropertyChanged(() => ProgressAsText);
+        ///// <summary>
+        ///// TODO nepujde volat rovnou z jednotliv7ych casti?
+        ///// </summary>
+        //public void UpdateTotalProgress()
+        //{
+        //    //OnPropertyChanged(() => TotalBytesToReceive);
+        //    //OnPropertyChanged(() => TotalBytesToReceiveAsText);
+        //    //OnPropertyChanged(() => BytesReceived);
+        //    //OnPropertyChanged(() => BytesReceivedAsText);
+        //   OnPropertyChanged(() => ProgressPercentage);
+        //    OnPropertyChanged(() => ProgressPercentageAsText);
 
-            //   TotalBytesToReceive = PartSet.Sum(p => p.TotalBytesToReceive);
+        //    //   TotalBytesToReceive = PartSet.Sum(p => p.TotalBytesToReceive);
+        //}
+
+
+
+
+
+        ///// <summary>
+        ///// 
+        ///// </summary>
+        //public void OnStatePropertyChanged()
+        //{
+        //    OnPropertyChanged(() => TotalBytesToReceive);
+        //    OnPropertyChanged(() => TotalBytesToReceiveAsText);
+        //    OnPropertyChanged(() => State);
+        //    OnPropertyChanged(() => StateColor);
+        //}
+
+
+        /// <summary>
+        /// Signál z <see cref="RadioDataPart"/>, že na něm došlo k nějaké změně
+        /// </summary>
+        public void PartChanged()
+        {
+            OnPropertyChanged(() => ProgressPercentage);
+            OnPropertyChanged(() => ProgressPercentageAsText);
+            OnPropertyChanged(() => TotalBytesToReceive);
+            OnPropertyChanged(() => TotalBytesToReceiveAsText);
+            OnPropertyChanged(() => State);
+            OnPropertyChanged(() => StateColor);
         }
 
 
-     
+        /// <summary>
+        /// Stav záznamu
+        /// </summary>
+        public RadioDataPartState State
+        {
+            get
+            {
+                // žádné díly pořadu?
+                if (PartSet == null || !PartSet.Any())
+                {
+                    return RadioDataPartState.None;
+                }
+                // všechny záznamy stejný State
+                var groups = PartSet.GroupBy(p => p.State);
+                if (groups.Count() == 1)
+                {
+                    return groups.First().Key;
+                }
+                // nějaky error
+                if (PartSet.Any(p => p.State == RadioDataPartState.Error))
+                {
+                    return RadioDataPartState.Error;
+                }
+                // něco probíhá
+                if (PartSet.Any(p => p.State == RadioDataPartState.Started))
+                {
+                    return RadioDataPartState.Started;
+                }
+                return RadioDataPartState.None;
+            }          
+        }
 
-
-
-
+        /// <summary>
+        /// Barva dle stavu řádku
+        /// </summary>
+        public Brush StateColor => new RadioDataPartStateHelper().ToBrush(State);
 
 
 
@@ -360,64 +436,64 @@ namespace RadioOwl.Parsers.Data
         //}
 
 
-        private FileRowState _state;
-        public FileRowState State
-        {
-            get { return _state; }
-            set
-            {
-                _state = value;
-               // StateColor = new SolidColorBrush(SetStateColor());
-                OnPropertyChanged();
-                OnPropertyChanged("StateColor");
-            }
-        }
+        //private FileRowState _state;
+        //public FileRowState State
+        //{
+        //    get => _state;
+        //    set
+        //    {
+        //        _state = value;
+        //        // StateColor = new SolidColorBrush(SetStateColor());
+        //        OnPropertyChanged();
+        //        OnPropertyChanged("StateColor");
+        //    }
+        //}
 
 
-        private Brush _stateColor;
+        //      private Brush _stateColor;
         /// <summary>
-        /// barva se ve WPF binduje na Brush!
-        /// </summary>
-        public Brush StateColor
-        {
-            get
-            {
-                Color color;
-                switch (State)
-                {
-                    case FileRowState.Parse:
-                        color = Colors.Yellow;
-                        break;
-                    case FileRowState.Started:
-                        color = Colors.Orange;
-                        break;
-                    case FileRowState.Finnished:
-                        color = Colors.LightGreen;
-                        break;
-                    case FileRowState.Error:
-                        color = Colors.Red;
-                        break;
-                    case FileRowState.AlreadyExists:
-                        color = Colors.YellowGreen;
-                        break;
-                    default:
-                        color = Colors.Blue;
-                        break;
-                }
-                return new SolidColorBrush(color);
+        ///// barva se ve WPF binduje na Brush!
+        ///// </summary>
+        //public Brush StateColor
+        //{
+        //    get
+        //    {
+        //        Color color;
+        //        switch (State)
+        //        {
+        //            case FileRowState.Parse:
+        //                color = Colors.Yellow;
+        //                break;
+        //            case FileRowState.Started:
+        //                color = Colors.Orange;
+        //                break;
+        //            case FileRowState.Finnished:
+        //                color = Colors.LightGreen;
+        //                break;
+        //            case FileRowState.Error:
+        //                color = Colors.Red;
+        //                break;
+        //            case FileRowState.FileAlreadyExists:
+        //                color = Colors.YellowGreen;
+        //                break;
+        //            default:
+        //                color = Colors.Blue;
+        //                break;
+        //        }
+        //        return new SolidColorBrush(color);
 
 
 
 
-                //return _state;
-            }
-            // get { return _stateColor; }
-            //set
-            //{
-            //    _stateColor = value;
-            //    OnPropertyChanged();
-            //}
-        }
+        //        //return _state;
+        //    }
+        //    // get { return _stateColor; }
+        //    //set
+        //    //{
+        //    //    _stateColor = value;
+        //    //    OnPropertyChanged();
+        //    //}
+        //}
 
 
         //private int _progress;
@@ -557,13 +633,13 @@ namespace RadioOwl.Parsers.Data
 
 
 
-     //   public RadioData(/*IList<FileRow> parentList,*/ string url)
-     //   {
-     // //      ParentList = parentList;
-     //       State = FileRowState.Started;
-     ////       LogList = new List<string>();
-     //       Url = url;
-     //   }
+        //   public RadioData(/*IList<FileRow> parentList,*/ string url)
+        //   {
+        // //      ParentList = parentList;
+        //       State = FileRowState.Started;
+        ////       LogList = new List<string>();
+        //       Url = url;
+        //   }
 
         //public FileRow(IList<FileRow> parentList, StreamUrlRow streamUrlRow) : this(parentList, streamUrlRow?.Url)
         //{
@@ -578,7 +654,7 @@ namespace RadioOwl.Parsers.Data
         {
             var radioLog = new RadioLogFactory().Create(msg, eventLevel);
             LogSet.Add(radioLog);
-            LogSetSelectedIndex = LogSet.Count() - 1;
+            LogSetSelectedIndex = LogSet.Count();
         }
 
         public void AddLogError(string msg)
@@ -599,33 +675,32 @@ namespace RadioOwl.Parsers.Data
 
 
 
-        public void AddLog(string log, FileRowState fileRowState)
-        {
-            AddLog(log);
-            State = fileRowState;
-        }
+        //public void AddLog(string log)
+        //{
+        //    AddLog(log);
+        //}
 
 
         
-        private Color SetStateColor()
-        {
-            switch (State)   
-            {
-                case FileRowState.Parse:
-                    return Colors.Yellow;
-                case FileRowState.Started:
-                    return Colors.Orange;
-                case FileRowState.Finnished:
-                    return Colors.LightGreen;
-                case FileRowState.Error:
-                    return Colors.Red;
-                case FileRowState.AlreadyExists:
-                    return Colors.YellowGreen;
-                    //return Colors.SlateGray;
-                default:
-                    return Colors.Blue;
-            }
-        }
+        //private Color SetStateColor()
+        //{
+        //    switch (State)   
+        //    {
+        //        case FileRowState.Parse:
+        //            return Colors.Yellow;
+        //        case FileRowState.Started:
+        //            return Colors.Orange;
+        //        case FileRowState.Finnished:
+        //            return Colors.LightGreen;
+        //        case FileRowState.Error:
+        //            return Colors.Red;
+        //        case FileRowState.FileAlreadyExists:
+        //            return Colors.YellowGreen;
+        //            //return Colors.SlateGray;
+        //        default:
+        //            return Colors.Blue;
+        //    }
+        //}
 
 
 

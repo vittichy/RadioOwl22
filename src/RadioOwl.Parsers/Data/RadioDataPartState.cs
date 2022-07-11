@@ -1,9 +1,9 @@
 ﻿namespace RadioOwl.Parsers.Data
 {
     /// <summary>
-    /// stav radku s downloadem
+    /// Stav řádku s downloadem
     /// </summary>
-    public enum FileRowState
+    public enum RadioDataPartState
     {
         None,
 
@@ -17,8 +17,19 @@
         /// </summary>
         Started,
 
+        /// <summary>
+        /// Stažený soubor již existuje
+        /// </summary>
+        FileAlreadyExists,
+
+        /// <summary>
+        /// Ukončeno
+        /// </summary>
         Finnished,
+
+        /// <summary>
+        /// Ukončeno s chybou
+        /// </summary>
         Error,
-        AlreadyExists
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Dtc.Http;
+using Dtc.Http.Http;
 using RadioOwl.Parsers.Data;
 using RadioOwl.Parsers.Parser.Interfaces;
 using System.Threading.Tasks;
@@ -10,6 +11,8 @@ namespace RadioOwl.Parsers.Parser.Base
     /// </summary>
     public abstract class PageParserBase : IPageParser
     {
+        public virtual int Version { get { return 0; } }
+
         public abstract bool CanParse(string url);
 
         public abstract Task<bool> ParseAsync(RadioData radioData);

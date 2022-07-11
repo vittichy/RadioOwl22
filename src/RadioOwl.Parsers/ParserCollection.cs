@@ -16,19 +16,15 @@ namespace RadioOwl.Parsers
         public readonly List<IPageParser> Parsers
                                 = new List<IPageParser>()
                                 {
-                                    new MujRozhlas2020Parser()
-                                    //Chain = /*new RozhlasPrehrat2018PageParser(
-                                    //            new RozhlasPrehrat2017PageParser(*/
-                                    //                new MujRozhlas2020Parser();
+                                    new MujRozhlas2022Parser(),
                                 };
-
 
         /// <summary>
         /// Vrací parser vhodný pro url
         /// </summary>
-        public IPageParser FindParser(string url)
+        public List<IPageParser> FindParser(string url)
         {
-            return Parsers.FirstOrDefault(p => p.CanParse(url));
+            return Parsers.Where(p => p.CanParse(url)).ToList();
         }
 
         /// <summary>
@@ -36,7 +32,7 @@ namespace RadioOwl.Parsers
         /// </summary>
         public bool ExistsParser(string url)
         {
-            return FindParser(url) != null;
+            return FindParser(url).Any();
         }
     }
 }   

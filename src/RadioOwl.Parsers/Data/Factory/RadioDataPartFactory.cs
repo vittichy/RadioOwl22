@@ -9,7 +9,7 @@
                 PartNo = partNo,
                 Title = partTitle,
                 Description = partDescription,
-                Url = partUrl
+                UrlMp3 = partUrl
             };
             radioData.PartSet.Add(radioDataPart);
             radioDataPart.AddLog($"Init. (#{partNo} {partUrl})");

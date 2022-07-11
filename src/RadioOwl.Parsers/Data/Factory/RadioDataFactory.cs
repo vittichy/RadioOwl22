@@ -13,7 +13,6 @@
         {
             var radioData = new RadioData()
             {
-                State = FileRowState.None,
                 Url = url,
             };
             return radioData;

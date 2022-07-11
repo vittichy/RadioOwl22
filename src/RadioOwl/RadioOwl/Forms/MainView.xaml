@@ -7,8 +7,8 @@
         xmlns:local="clr-namespace:RadioOwl.Forms"
         mc:Ignorable="d"
         AllowDrop="False"
-        Title="{Binding Title}"
-        Height="450" Width="800">
+        Title="{Binding ViewTitle}"
+        Height="650" Width="1200">
 
     <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
         <Grid.RowDefinitions>
@@ -49,9 +49,8 @@
 
 
 
-        <DockPanel Grid.Row="1" Background="SeaGreen"
-                   VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
-                   >
+        <DockPanel Grid.Row="1" 
+                   VerticalAlignment="Stretch" HorizontalAlignment="Stretch" >
 
             <DataGrid DockPanel.Dock="Left" 
                 HorizontalAlignment="Stretch" VerticalAlignment="Stretch" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
@@ -71,31 +70,36 @@
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Url"        Binding="{Binding Url, Mode=OneWay}"                        Width="160"/>
                     <!-- tohle je pocet dilu zjisteny parsovanim, ne pocet PartSet ... otazka co by se zde melo zobrazovat? -->
-                    <DataGridTextColumn Header="Počet dílů" Binding="{Binding ContentSerialAllParts, Mode=OneWay}"      Width="50"/>
-                    <DataGridTextColumn Header="Velikost"   Binding="{Binding TotalBytesToReceiveAsText, Mode=OneWay}"  Width="150"/>
+                    <DataGridTextColumn Header="Parts"      Binding="{Binding ContentSerialAllParts, Mode=OneWay}"      Width="50" />
+                    <DataGridTextColumn Header="Size"       Binding="{Binding TotalBytesToReceiveAsText, Mode=OneWay}"  Width="75"/>
                     <!--<DataGridTextColumn Header="Staženo"    Binding="{Binding BytesReceivedAsText, Mode=OneWay}"        Width="150"/>-->
-                    <DataGridTemplateColumn Header="Průběh" Width="120">
+                    <DataGridTemplateColumn Header="Progres" Width="100">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <Grid >
-                                    <ProgressBar Minimum="0" Maximum="100" Value="{Binding Progress,Mode=OneWay}" Foreground="{Binding StateColor, Mode=OneWay}"  />
-                                    <TextBlock Foreground="Black" Text="{Binding ProgressAsText,Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    <ProgressBar Minimum="0" Maximum="100" Value="{Binding ProgressPercentage,Mode=OneWay}" Foreground="{Binding StateColor, Mode=OneWay}"  />
+                                    <TextBlock Foreground="Black" Text="{Binding ProgressPercentageAsText,Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Grid>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
+                    <DataGridTextColumn Header="Bundle" Binding="{Binding SiteEntityBundle, Mode=OneWay}" Width="70"/>
+                    <DataGridTextColumn Header="Label" Binding="{Binding SiteEntityLabel, Mode=OneWay}" Width="160"/>
+                    <DataGridTextColumn Header="Path" Binding="{Binding SiteDocumentPath, Mode=OneWay}" Width="160" />
 
-                    
-                    
-
-                    <DataGridTextColumn Header="SiteEntityBundle" Binding="{Binding SiteEntityBundle, Mode=OneWay}" Width="70"/>
-                    <DataGridTextColumn Header="SiteEntityLabel" Binding="{Binding SiteEntityLabel, Mode=OneWay}" Width="160"/>
-                    <DataGridTextColumn Header="SiteDocumentPath" Binding="{Binding SiteDocumentPath, Mode=OneWay}" Width="160" />
-
-
-
-                    <DataGridTextColumn Header="Parts" Binding="{Binding PartSet.Count, Mode=OneWay}" Width="50"/>
+                    <DataGridTemplateColumn Header="Log" Width="300">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <ComboBox ItemsSource="{Binding Path=LogSet}"  
+                                              SelectedIndex="{Binding Path=LogSetSelectedIndex}" 
+                                              DisplayMemberPath="DisplayText"
+                                              IsReadOnly="True" />
+                                </Grid>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
 
 
 
@@ -108,23 +112,13 @@
 
 
                     <!-- TODO delete? <DataGridTextColumn Header="Id" Binding="{Binding Id, Mode=OneWay}" Width="70"/>-->
-                    <DataGridTextColumn Header="Stanice" Binding="{Binding MetaSiteName}" Width="60"/>
+                    
+                    
+                    <!--<DataGridTextColumn Header="Stanice" Binding="{Binding MetaSiteName}" Width="60"/>
                     <DataGridTextColumn Header="Název" Binding="{Binding MetaTitle}" Width="130"/>
                     <DataGridTextColumn Header="Díl" Binding="{Binding MetaSubTitle}" Width="130"/>
-                    <DataGridTextColumn Header="Popis" Binding="{Binding MetaDescription}" Width="130"/>
-                    <DataGridTextColumn Header="Soubor" Binding="{Binding FileName}" Width="150"/>
-                    <DataGridTemplateColumn Header="Log" Width="200">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <Grid>
-                                    <ComboBox ItemsSource="{Binding Path=LogSet}"  
-                                      SelectedIndex="{Binding Path=LogSetSelectedIndex}" 
-                                      DisplayMemberPath="DisplayText"
-                                      IsReadOnly="True" />
-                                </Grid>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Header="Popis" Binding="{Binding MetaDescription}" Width="130"/>-->
+                  
 
                 </DataGrid.Columns>
 
@@ -141,12 +135,11 @@
 
             </DataGrid>
 
-            <DataGrid DockPanel.Dock="Right" >
+            <!--<DataGrid DockPanel.Dock="Right" >
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="XXXX" Binding="{Binding Url, Mode=OneWay}" Width="160"/>
                 </DataGrid.Columns>
-
-            </DataGrid>
+            </DataGrid>-->
 
         </DockPanel>
 
@@ -156,48 +149,37 @@
 
 
 
-        <DataGrid   Grid.Row="3" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                  x:Name="DataGridParts" 
-                  AutoGenerateColumns="False" 
-                  CanUserAddRows="False"
-                  AllowDrop="True" 
-                  ItemsSource="{Binding RadioDataSelected.PartSet}"
-                  SelectedItem="{Binding PartSelected}"
-                  IsReadOnly="True"
-                  
-                 >
-
-
-
-
-
+        <DataGrid 
+            Grid.Row="3"
+            HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+            x:Name="DataGridParts" 
+            AutoGenerateColumns="False" 
+            CanUserAddRows="False"
+            AllowDrop="True" 
+            ItemsSource="{Binding RadioDataSelected.PartSet}"
+            SelectedItem="{Binding PartSelected}"
+            IsReadOnly="True" >
 
             <DataGrid.Columns>
-                <DataGridTextColumn Header="PartNo" Binding="{Binding PartNo, Mode=OneWay}" Width="50" />
-                <DataGridTextColumn Header="Url" Binding="{Binding Url, Mode=OneWay}" Width="400"/>
-                <DataGridTextColumn Header="Title" Binding="{Binding Title, Mode=OneWay}" Width="150"/>
+                <DataGridTextColumn Header="#" Binding="{Binding PartNo, Mode=OneWay}" Width="30" />
+                <DataGridTextColumn Header="Url" Binding="{Binding UrlMp3, Mode=OneWay}" Width="160"/>
+                <DataGridTextColumn Header="Title" Binding="{Binding Title, Mode=OneWay}" Width="200"/>
                 <DataGridTextColumn Header="Description" Binding="{Binding DescriptionSingleLine, Mode=OneWay}" Width="250"/>
 
-
-
-
-
-
-                <DataGridTemplateColumn Header="Průběh" Width="100">
+                <DataGridTemplateColumn Header="Progres" Width="100">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <Grid >
-                                <ProgressBar Minimum="0" Maximum="100" Value="{Binding Progress,Mode=OneWay}" Foreground="{Binding StateColor, Mode=OneWay}"  />
-                                <TextBlock Foreground="White" Text="{Binding ProgressPercent,Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <ProgressBar Minimum="0" Maximum="100" Value="{Binding ProgressPercentage,Mode=OneWay}" Foreground="{Binding StateColor, Mode=OneWay}"  />
+                                <TextBlock Foreground="Black" Text="{Binding ProgressPercentageAsText,Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Grid>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
 
-                <DataGridTextColumn Header="FileName" Binding="{Binding FileName, Mode=OneWay}" Width="250"/>
+                <DataGridTextColumn Header="FileName" Binding="{Binding FileName, Mode=OneWay}" Width="350"/>
 
-
-                <DataGridTemplateColumn Header="Log" Width="200">
+                <!--<DataGridTemplateColumn Header="Log" Width="200">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <Grid>
@@ -208,7 +190,21 @@
                             </Grid>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
+                </DataGridTemplateColumn>-->
+
+
+                <!--<DataGridTemplateColumn Header="Log" Width="200">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <ComboBox ItemsSource="{Binding Path=LogSet}"  
+                                      SelectedIndex="{Binding Path=LogSetSelectedIndex}" 
+                                      DisplayMemberPath="DisplayText"
+                                      IsReadOnly="True" />
+                            </Grid>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>-->
 
                 <!--<DataGridTextColumn Header="Audio" Binding="{Binding UrlMp3Download, Mode=OneWay}" Width="160"/>
                 <DataGridTextColumn Header="#" Binding="{Binding UrlMp3DownloadNo, Mode=OneWay}" Width="15"/>
@@ -241,6 +237,18 @@
                 </DataGridTemplateColumn>-->
 
             </DataGrid.Columns>
+
+
+            <DataGrid.ContextMenu>
+                <ContextMenu >
+                    <MenuItem Name="MiSmazat2" Header="Smazat" cal:Message.Attach="[Event Click] = [Action DeleteRow]"  />
+                    <Separator />
+                    <MenuItem Name="MiPrehrat2" Header="Přehrát" cal:Message.Attach="PlayRow" />
+                    <MenuItem Name="Mi12" Header="Refresh" cal:Message.Attach="RefreshRow" />
+                    <MenuItem Name="M22" Header="Save log" cal:Message.Attach="PlayRow" />
+                    <MenuItem Name="M232" Header="Open location" cal:Message.Attach="PlayRow" />
+                </ContextMenu>
+            </DataGrid.ContextMenu>
 
             <!--<DataGrid.ContextMenu>
                 <ContextMenu >

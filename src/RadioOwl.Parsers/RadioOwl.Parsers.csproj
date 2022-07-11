@@ -3,7 +3,7 @@
   <PropertyGroup>
     <!-- výchozí stav je jen net5.0 ... díky -windows a UseWPF je možne použít PresentationCore.dll a jeho typy Brush, Color atd 
     viz: https://stackoverflow.com/questions/67298609/add-references-to-presentationcore-dll-and-presentationframework-dll-in-net-api -->
-    <TargetFramework>net5.0-windows</TargetFramework>
+    <TargetFramework>net6.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
   </PropertyGroup>
 
@@ -12,7 +12,13 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="VitTichy.Dtc.Common" Version="1.0.15" />
     <PackageReference Include="VitTichy.Dtc.Html" Version="1.0.3" />
-    <PackageReference Include="VitTichy.Dtc.Http" Version="1.0.2" />
+    <PackageReference Include="VitTichy.Dtc.Http" Version="1.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>$(AssemblyName).IntegrationTests</_Parameter1>
+    </AssemblyAttribute>
   </ItemGroup>
 
 </Project>
