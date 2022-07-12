@@ -154,7 +154,7 @@ namespace RadioOwl.Forms
             if (parseOk)
             {
                 radioData.AddLog("Parser ok.");
-                DownloadRadioData(radioData);
+                await DownloadRadioDataAsync(radioData);
             }
             else
             {
@@ -179,12 +179,14 @@ namespace RadioOwl.Forms
         /// <summary>
         /// Zpracovani rozparsovanych dat - tj zde bych jiz mel znat odkazy na finalni mp3 a ty stahnu, ulozim, porezim filename, mp3id tagy atd
         /// </summary>
-        private void DownloadRadioData(RadioData radioData)
+        private async Task DownloadRadioDataAsync(RadioData radioData)
         {
             radioData.PartSet
                             .Where(p => p.UrlMp3Exists)
                                 .ToList()
                                     .ForEach(async p => await ProcessDataPartAsync(p));
+            await SaveImageAsync(radioData);
+            SaveReadMe(radioData);
         }
 
         /// <summary>
@@ -193,7 +195,7 @@ namespace RadioOwl.Forms
         private async Task ProcessDataPartAsync(RadioDataPart radioDataPart)
         {
             radioDataPart.State = RadioDataPartState.Started;
-            radioDataPart.FileName = new FileHelper().GenerateFileName(radioDataPart);
+            radioDataPart.FileName = new FileHelper().GenerateMp3FileName(radioDataPart);
 
             // soubor jeste neexistuje?
             if (!File.Exists(radioDataPart.FileName))
@@ -223,7 +225,7 @@ namespace RadioOwl.Forms
             if (output.DownloadOk)
             {
                 SaveDataPart(radioDataPart, output.Output);
-                SaveReadMe(radioDataPart);
+                SavePartReadMe(radioDataPart);
                 radioDataPart.State = RadioDataPartState.Finnished;
             }
             else
@@ -233,16 +235,60 @@ namespace RadioOwl.Forms
             }
         }
 
-        private void SaveReadMe(RadioDataPart radioDataPart)
+        /// <summary>
+        /// Uloží txt soubor ke konkrétnímu dílu <see cref="RadioDataPart"/>
+        /// </summary>
+        private void SavePartReadMe(RadioDataPart radioDataPart)
         {
             var readmeFilename = new FileHelper().GenerateReadmeFilename(radioDataPart);
 
             var readme = new StringBuilder();
-            readme.AppendLine($"{DateTime.Now:g}");
-            readme.AppendLine(radioDataPart.Title);
-            readme.AppendLine($"Parts:{radioDataPart.RadioData?.ContentSerialAllParts} Found:{radioDataPart.RadioData?.PartSet?.Count()}");
+            readme.AppendLine(radioDataPart?.RadioData.SiteEntityLabel);
+            readme.AppendLine($"{radioDataPart.RadioData?.ContentSerialAllParts}/{radioDataPart.RadioData?.PartSet?.Count()} {radioDataPart.Title}");
             readme.AppendLine(radioDataPart.Description);
             File.WriteAllText(readmeFilename, readme.ToString());
+        }
+
+        private void SaveReadMe(RadioData radioData)
+        {
+            var readmeFilename = new FileHelper().GenerateReadmeFilename(radioData);
+
+            var readme = new StringBuilder();
+            readme.AppendLine(radioData.SiteEntityLabel);
+            readme.AppendLine(radioData.DetailDescription);
+            File.WriteAllText(readmeFilename, readme.ToString());
+        }
+
+        private async Task SaveImageAsync(RadioData radioData)
+        {
+            if (!string.IsNullOrEmpty(radioData.ImageUrl)) 
+            {
+                var imageFilename = new FileHelper().GenerateImageFilename(radioData);
+                if (!File.Exists(imageFilename))
+                {
+                    await DownloadImageAsync(radioData.ImageUrl, imageFilename);
+                } 
+            }
+        }
+
+        /// <summary>
+        /// Stažení image k pořadu
+        /// </summary>
+        private async Task DownloadImageAsync(string imageUrl, string imageFilename)
+        {
+            if (!string.IsNullOrEmpty(imageUrl) && !File.Exists(imageFilename))
+            {
+                var asyncDownloader = new AsyncDownloader();
+                var output = await asyncDownloader.GetData(imageUrl);
+                if (output.DownloadOk)
+                {
+                    new FileHelper().EnsureDirectoryCreated(imageFilename);
+                    using (var file = new FileStream(imageFilename, FileMode.Create, FileAccess.Write))
+                    {
+                        file.Write(output.Output, 0, output.Output.Length);
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -252,8 +298,7 @@ namespace RadioOwl.Forms
         /// <param name="data">Mp3 data k ulozeni</param>
         private void SaveDataPart(RadioDataPart radioDataPart, byte[] data)
         {
-            var path = Path.GetDirectoryName(radioDataPart.FileName);
-            Directory.CreateDirectory(path);
+            new FileHelper().EnsureDirectoryCreated(radioDataPart.FileName);
 
             using (var file = new FileStream(radioDataPart.FileName, FileMode.Create, FileAccess.Write))
             {
@@ -261,25 +306,7 @@ namespace RadioOwl.Forms
             }
             radioDataPart.Saved = true;
             radioDataPart.AddLog($"Uložen soubor: {radioDataPart.FileName}");
-
-
-            // TODO add readme file?
-            //if (!string.IsNullOrEmpty(fileRow.ReadMeText) && !string.IsNullOrEmpty(fileRow.ReadMeFileName))
-            //    File.WriteAllText(fileRow.ReadMeFileName, fileRow.ReadMeText);
         }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         /// <summary>
         /// akce Načíst z URL

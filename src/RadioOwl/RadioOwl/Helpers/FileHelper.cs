@@ -12,32 +12,55 @@ namespace RadioOwl.Helpers
         /// </summary>
         /// <param name="radioDataPart"></param>
         /// <returns></returns>
-        public string GenerateFileName(RadioDataPart radioDataPart)
+        public string GenerateMp3FileName(RadioDataPart radioDataPart)
         {
-            var path = GeneratePath(radioDataPart);
-            var fileName = GenerateFilename(radioDataPart);
+            return GenerateFullPartFilename(radioDataPart, ".mp3");
+        }
+
+        /// <summary>
+        /// Nageruji vhodné filename pro readme k části pořadu
+        /// </summary>
+        public string GenerateReadmeFilename(RadioDataPart radioDataPart)
+        {
+            return GenerateFullPartFilename(radioDataPart, ".txt");
+        }
+
+        /// <summary>
+        /// Nageruji vhodné filename pro readme k celému pořadu
+        /// </summary>
+        public string GenerateReadmeFilename(RadioData radioData)
+        {
+            var path = GetFolderPath(radioData);
+            var fileName = "readme.txt";
+            return Path.Combine(path, fileName);
+        }
+
+        private string GenerateFullPartFilename(RadioDataPart radioDataPart, string extension)
+        {
+            var path = GetFolderPath(radioDataPart?.RadioData);
+            var fileName = GeneratePartFilename(radioDataPart, extension);
             return Path.Combine(path, fileName);
         }
 
         /// <summary>
-        /// Nageruji vhodné filename dle části pořadu
+        /// Nageruji vhodné filename dle img pořadu
         /// </summary>
-        public string GenerateReadmeFilename(RadioDataPart radioDataPart)
+        public string GenerateImageFilename(RadioData radioData)
         {
-            var path = GeneratePath(radioDataPart);
-            var filename = GetReadmeFilename(radioDataPart);
+            var path = GetFolderPath(radioData);
+            var filename = GetImageFilename(radioData);
             return Path.Combine(path, filename);
         }
 
         /// <summary>
         /// Nageruji vhodný adresář pro uložení pořadu
         /// </summary>
-        private string GeneratePath(RadioDataPart radioDataPart)
+        private string GetFolderPath(RadioData radioData)
         {
-            var subPath = radioDataPart.RadioData.SiteDocumentPath?.Trim();
+            var subPath = radioData?.SiteDocumentPath?.Trim();
             if (string.IsNullOrEmpty(subPath))
             {
-                subPath = radioDataPart.RadioData.ContentId?.Trim();
+                subPath = radioData?.ContentId?.Trim();
                 if (string.IsNullOrEmpty(subPath))
                 {
                     subPath = $"RADIOOWL_DOWNLOAD_{Guid.NewGuid()}";
@@ -62,9 +85,9 @@ namespace RadioOwl.Helpers
         /// <summary>
         /// Nageruji vhodné filename dle části pořadu
         /// </summary>
-        private string GenerateFilename(RadioDataPart radioDataPart)
+        private string GeneratePartFilename(RadioDataPart radioDataPart, string extension)
         {
-            var filename = GetBaseFileName(radioDataPart);
+            var filename = GetBaseFileName(radioDataPart?.Title);
 
             // skládá se z jednotlivých dílů? přidám tedy do filename
             if (radioDataPart.RadioData.ContentSerialAllParts.HasValue && radioDataPart.RadioData.ContentSerialAllParts.Value > 0)
@@ -84,22 +107,30 @@ namespace RadioOwl.Helpers
             }
 
             filename = RemoveInvalidChars(filename.TrimToMaxLen(80));
-            filename += ".mp3";
+            filename += extension;
             return filename;
         }
 
-        private string GetReadmeFilename(RadioDataPart radioDataPart)
+        private string GetReadmeFilename(string title)
         {
-            var filename = GetBaseFileName(radioDataPart);
-            filename = RemoveInvalidChars(filename.TrimToMaxLen(80));
+            var filename = GetBaseFileName(title);
             filename += ".readme";
             return filename;
         }
 
-        private string GetBaseFileName(RadioDataPart radioDataPart)
+        private string GetImageFilename(RadioData radioData)
         {
-            // základní jméno pořadu
-            var filename = radioDataPart.Title?.Trim();
+            var filename = GetBaseFileName(radioData.SiteEntityLabel);
+            filename += ".jpg";
+            return filename;
+        }
+
+        /// <summary>
+        /// Vrací základ filename pro uložení pořadu dle title
+        /// </summary>
+        private string GetBaseFileName(string title)
+        {
+            var filename = RemoveInvalidChars(title?.Trim());
             if (string.IsNullOrEmpty(filename))
             {
                 filename = $"UNKOWN_NAME_{Guid.NewGuid()}";
@@ -118,5 +149,10 @@ namespace RadioOwl.Helpers
             return fileName;
         }
 
+        public DirectoryInfo EnsureDirectoryCreated(string fileName)
+        {
+            var path = Path.GetDirectoryName(fileName);
+            return Directory.CreateDirectory(path);
+        }
     }
 }

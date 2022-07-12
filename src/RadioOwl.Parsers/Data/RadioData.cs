@@ -16,6 +16,11 @@ namespace RadioOwl.Parsers.Data
     public class RadioData : PropertyChangedBase
     {
         /// <summary>
+        /// Html kod pro url
+        /// </summary>
+        public string HtmlPage;
+
+        /// <summary>
         /// Části - jendotlivé díly pořadu a pod
         /// </summary>
         public ObservableCollection<RadioDataPart> PartSet { get; set; } = new ObservableCollection<RadioDataPart>();
@@ -52,6 +57,11 @@ namespace RadioOwl.Parsers.Data
                 OnPropertyChanged();
             }
         }
+
+        /// <summary>
+        /// Url s obrázkem k pořadu
+        /// </summary>
+        public string ImageUrl;
 
         /// <summary>
         /// Celková velikost všech částí
@@ -93,32 +103,29 @@ namespace RadioOwl.Parsers.Data
         public string ProgressPercentageAsText { get { return RadioDataHelper.ProgressText(ProgressPercentage, BytesReceived); } }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         /// <summary>
-        /// Html kod pro url
+        /// Detailní popis pořadu
         /// </summary>
-        public string HtmlPage;
+        public string DetailDescription;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -46,6 +46,10 @@ namespace RadioOwl.Parsers.Parser
                     throw new Exception("Nepodařilo se dohledat RID.");
                 radioData.AddLog($"Dohledáno RID: {rid}");
 
+                // načtení hlavního popisu k pořadu
+                var detailDescription = htmlDoc.DocumentNode.SelectSingleNode(@".//div[@class='b-detail__description']//p").InnerText;
+                radioData.DetailDescription = HtmlEntity.DeEntitize(detailDescription);
+
                 // zde asi jedine misto, kde zjistim pocet epizod?
                 // dohledat <script> pod <div> kde je to jako kus JS zdrojaku s definovanou JSON promennou, kterou z toho zkusim vykousnou
                 var mujRozhlas2020SiteInfo = GetContentSerialAllParts(htmlDoc);
@@ -75,6 +79,9 @@ namespace RadioOwl.Parsers.Parser
                     default:
                         throw new Exception($"Unknown SiteEntityBundle:'{mujRozhlas2020SiteInfo.SiteEntityBundle}'");
                 }
+
+                radioData.ImageUrl = TryFindImage(htmlDoc);
+
                 return true;
             }
             catch (Exception ex)
@@ -82,6 +89,16 @@ namespace RadioOwl.Parsers.Parser
                 radioData.AddLogError($"ParseAsync error: {ex.Message}.");
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Zkusím dohledat obrazek k pořadu
+        /// </summary>
+        private string TryFindImage(HtmlDocument htmlDoc)
+        {
+            var imgNode = htmlDoc.DocumentNode.SelectSingleNode(@".//figure[@class='b-detail__img']//img");
+            var imgUrl = imgNode?.Attributes["src"]?.Value;
+            return string.IsNullOrEmpty(imgUrl) ? null : $"https://www.mujrozhlas.cz{imgUrl}";
         }
 
         private async Task ParseShowBundleAsync(RadioData radioData, MujRozhlas2020SiteInfo mujRozhlas2020SiteInfo, string rid)
@@ -314,7 +331,7 @@ namespace RadioOwl.Parsers.Parser
                 SiteEntityBundle = jMainJson.SelectToken("siteEntityBundle")?.Value<string>(),
                 SiteEntityLabel = jMainJson.SelectToken("siteEntityLabel")?.Value<string>(),
                 SiteDocumentPath = jMainJson.SelectToken("siteDocumentPath")?.Value<string>(),
-                ContentId = jMainJson.SelectToken("contentId")?.Value<string>(),
+                ContentId = jMainJson.SelectToken("contentId")?.Value<string>()
             };
 
             return mujRozhlas2020SiteInfo;
