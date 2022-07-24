@@ -86,22 +86,22 @@ namespace RadioOwl.Parsers.Data
         /// <summary>
         /// Celkový total progres ze všech částí v %
         /// </summary>
-        public long ProgressPercentage 
-        { 
-            get 
-            { 
-                if(TotalBytesToReceive == 0)
+        public long ProgressPercentage
+        {
+            get
+            {
+                if (TotalBytesToReceive == 0)
                 {
                     return 0;
                 }
-                return BytesReceived == 0 ? 0 : (long)Math.Round(((decimal)BytesReceived / (decimal)TotalBytesToReceive) * 100, 0); 
-            } }
+                return BytesReceived == 0 ? 0 : (long)Math.Round(((decimal)BytesReceived / (decimal)TotalBytesToReceive) * 100, 0);
+            }
+        }
 
         /// <summary>
         /// Celkový total progres ze všech částí v % jako text
         /// </summary>
         public string ProgressPercentageAsText { get { return RadioDataHelper.ProgressText(ProgressPercentage, BytesReceived); } }
-
 
         /// <summary>
         /// Detailní popis pořadu
@@ -292,7 +292,7 @@ namespace RadioOwl.Parsers.Data
                 {
                     return RadioDataPartState.None;
                 }
-                // všechny záznamy stejný State
+                // všechny záznamy stejný State? - nemusi byt nutne vse stazene, pocet dilu nemusi odpovidat rozparsovanemu poctu (viz ContentSerialAllParts)
                 var groups = PartSet.GroupBy(p => p.State);
                 if (groups.Count() == 1)
                 {
