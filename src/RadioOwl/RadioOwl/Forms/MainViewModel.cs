@@ -252,6 +252,7 @@ namespace RadioOwl.Forms
         private void SaveReadMe(RadioData radioData)
         {
             var readmeFilename = new FileHelper().GenerateReadmeFilename(radioData);
+            new FileHelper().EnsureDirectoryCreated(readmeFilename);
 
             var readme = new StringBuilder();
             readme.AppendLine(radioData.SiteEntityLabel);
