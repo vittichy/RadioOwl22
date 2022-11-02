@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media.Imaging;
+using Squirrel;
 
 namespace RadioOwl
 {
@@ -38,6 +39,13 @@ namespace RadioOwl
             // test formulare
             //DisplayRootViewFor<Forms.Test.Window1ViewModel>(settings);
             //DisplayRootViewFor<Forms.Test.Window2ViewModel>(settings);
+
+            CheckForUpdates();
+        }
+
+        private void CheckForUpdates()
+        {
+            //using var upManager = new Squirrel. UpdateManager();
         }
     }
 }

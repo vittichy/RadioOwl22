@@ -32,6 +32,17 @@
                         <TextBlock VerticalAlignment="Center" Margin="3,0,10,0" >Načíst z URL</TextBlock>
                     </StackPanel>
                 </Button>
+                <Button cal:Message.Attach="UpdateApp"  >
+                    <StackPanel Orientation="Horizontal">
+                        <!--<Image Source="/RadioOwl;component/icons/glyphicons-201-download.png" />-->
+                        <TextBlock VerticalAlignment="Center" Margin="3,0,10,0" >Update app</TextBlock>
+                    </StackPanel>
+                </Button>
+                <Button cal:Message.Attach="AppInfo"  >
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock VerticalAlignment="Center" Margin="3,0,10,0" >Info</TextBlock>
+                    </StackPanel>
+                </Button>
                 <!--<Button Name="SniffAround" IsEnabled="False" >
                     <StackPanel Orientation="Horizontal">
                         <Image Source="/RadioOwl;component/icons/glyphicons-10-magic.png" />

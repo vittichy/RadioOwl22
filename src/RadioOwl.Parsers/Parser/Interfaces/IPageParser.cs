@@ -1,4 +1,5 @@
 ﻿using RadioOwl.Parsers.Data;
+using System.Collections;
 using System.Threading.Tasks;
 
 namespace RadioOwl.Parsers.Parser.Interfaces
@@ -7,9 +8,19 @@ namespace RadioOwl.Parsers.Parser.Interfaces
     /// Interface pro parsery 
     /// </summary>
     public interface IPageParser 
-    {
+    {   
         /// <summary>
-        /// Umim parsovat zadane url?
+        /// Verze parseru
+        /// </summary>
+        int Version { get; }
+
+        /// <summary>
+        /// Url ke zpracování
+        /// </summary>
+        string[] ParseUrls { get; }
+
+        /// <summary>
+        /// Umim parsovat zaslané url?
         /// </summary>
         bool CanParse(string url);
 

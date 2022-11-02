@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RadioOwl", "RadioOwl\RadioO
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RadioOwl.Parsers", "RadioOwl.Parsers\RadioOwl.Parsers.csproj", "{7951F8AD-93B8-406B-9D13-5B4AB2EEE3AA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RadioOwl.Parsers.IntegrationTests", "RadioOwl.Parsers.IntegrationTests\RadioOwl.Parsers.IntegrationTests.csproj", "{310CDB9A-3F89-47C4-A2A3-51B3EEC2658C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RadioOwl.Parsers.IntegrationTests", "RadioOwl.Parsers.IntegrationTests\RadioOwl.Parsers.IntegrationTests.csproj", "{310CDB9A-3F89-47C4-A2A3-51B3EEC2658C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

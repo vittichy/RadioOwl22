@@ -23,13 +23,13 @@ namespace RadioOwl.Parsers.Parser
     /// </summary>
     public class MujRozhlas2022Parser : PageParserBase
     {
+        /// <inheritdoc/>
         public override int Version => 1;
 
-        public override bool CanParse(string url)
-        {
-            return (url ?? string.Empty).Contains("mujrozhlas.cz", StringComparison.InvariantCultureIgnoreCase);
-        }
+        /// <inheritdoc/>
+        public override string[] ParseUrls { get { return new string[] { "mujrozhlas.cz" }; } }
 
+        /// <inheritdoc/>
         public override async Task<bool> ParseAsync(RadioData radioData)
         {
             await DownloadHtmlAsync(radioData);

@@ -325,13 +325,26 @@ namespace RadioOwl.Forms
 
         }
 
+        /// <summary>
+        /// Update squirrel app
+        /// </summary>
+        public void UpdateApp()
+        {
+            using Squirrel.UpdateManager upManager = new Squirrel.UpdateManager(@"d:\vt\dev\!squirrel_out")
+            {
 
-
-
-
-
-
-
-
+            };
+        }
+        
+        /// <summary>
+        /// Informace o aplikaci
+        /// </summary>
+        public void AppInfo()
+        {
+            var appInfo = $"App version:?{Environment.NewLine}";
+            var parsersInfo = _parsers.Parsers.Select(p => $"{p.GetType().Name} (v:{p.Version} url:{string.Join(',', p.ParseUrls)})");
+            var result = $"{appInfo}{Environment.NewLine}{Environment.NewLine}{string.Join(Environment.NewLine, parsersInfo)}";
+            MessageBox.Show(result, "App info", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
     }
 }
